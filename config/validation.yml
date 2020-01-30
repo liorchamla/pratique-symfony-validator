@@ -1,13 +1,13 @@
-User:
-  properties:
-    firstName:
-      - NotBlank: ~
-      - Length:
-          min: 5
-    lastName:
-      - NotBlank: ~
-      - Length:
-          min: 3
-    age:
-      - GreaterThanOrEqual:
-          value: 18
+# User:
+#   properties:
+#     firstName:
+#       - NotBlank: ~
+#       - Length:
+#           min: 5
+#     lastName:
+#       - NotBlank: ~
+#       - Length:
+#           min: 3
+#     age:
+#       - GreaterThanOrEqual:
+#           value: 18

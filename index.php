@@ -1,13 +1,19 @@
 <?php
 
 /**
- * QUATRIEME PARTIE (BIS) : VALIDER DES OBJETS ? AVEC UNE CONFIG EN YAML !
+ * QUATRIEME PARTIE (TIERS) : VALIDER DES OBJETS ? AVEC UNE CONFIG EN ANNOTATIONS !
  * ------------
  * Dans la section précédente, on commençait à voir comment valider un objet simplement via une méthode statique à l'intérieure de la classe
  * qui explique au validateur les contraintes à valider.
  * 
- * Il est aussi possible de passer par un fichier de configuration YAML ! Pour ça, on a besoin du composant symfony/yaml (composer require
- * symfony/yaml) qui permet de lire les fichiers YAML et d'en déduire un tableau.
+ * On peut enfin pour cela passer par les Annotations directement au sein de la classe elle-même. Les annotations sont des indications
+ * données dans les blocs de commentaires au dessus d'une classe, d'une propriété ou d'une méthode. Elle ne sont pas gérées nativement en PHP
+ * mais peuvent l'être si on installe les packages adéquats (composer require doctrine/annotations doctrine/cache).
+ * 
+ * Les avantages sont multiples :
+ * 1) Elles sont simples à écrire et à apprendre
+ * 2) La configuration des contraintes et le code de la classe sont dans le même fichier
+ * 3) Elles sont courtes à écrire :D
  * 
  * UNE MISE EN PLACE A FAIRE :
  * ------------
@@ -41,12 +47,13 @@
  * ------------
  * 
  * Pour bien comprendre ce qu'on a fait durant cette section, voyez les fichiers suivants :
- * - config/validation.yml : le fichier de configuration du validateur au format YAML
- * - User.php : la classe que l'on souhaite valider (où nous avons commenté le contenu de la méthode statique qui est maintenant dans le
- * fichier YAML)
+ * - config/validation.yml : on a commenté l'ensemble de la configuration pour laisser place aux annotations
+ * - User.php : la classe que l'on souhaite valider (où nous avons commenté le contenu de la méthode statique qui est maintenant dans les 
+ * annotations)
  * - index.php : on utilise le validatorBuilder pour configurer le validateur
  */
 
+use Doctrine\Common\Annotations\AnnotationRegistry;
 use Symfony\Component\Validator\Validation;
 
 require __DIR__ . '/vendor/autoload.php';
@@ -56,22 +63,17 @@ require 'GmailConstraint.php';
 require 'GmailConstraintValidator.php';
 
 /**
- * REMARQUE IMPORTANTE :
- * --------
- * A ce stade, nous avons déjà vu comment créer les métadatas du validateur au sein même de la classe (via l'appel d'une méthode statique) et
- * nous ajoutons maintenant la configuration YAML. Mais alors, que se passe-t-il si on a un conflit entre les deux ?
+ * CONFIGURER DOCTRINE ANNOTATIONS :
+ * -------
+ * Les annotations présentes dans notre classe sont elles mêmes des classes, et quand Doctrine va LIRE les annotation, il va vouloir
+ * instancier ces classes. Le problème est que Doctrine ne se sert pas de notre fichier d'autoload.php tant qu'on ne le lui dit pas.
  * 
- * Notez bien que SELON L'ORDRE DANS LEQUEL VOUS CONSTRUISEZ LE VALIDATEUR (voir ci-dessous), le YAML écrasera ce que dit la classe ou alors
- * la classe écrasera ce que dit le YAML.
- * 
- * Par exemple : dans le fichier config/validation.yml je dis que le firstName doit faire minimum 5 caractères alors que dans la classe je dis
- * qu'il lui fait 3 caractères minimum.
- * 
- * Vous constaterez que c'est la contrainte du YAML qui s'applique mais si vous inversez les deux méthodes ci-dessous lors de la construction 
- * du validateur, vous verrez que c'est la classe qui prend la main.
- * 
- * En gros : c'est le dernier qui parle qui a raison :)
+ * Ici nous lui donnons donc le moyen de retrouver les classes représentées dans nos annotations.
  */
+$loader = require __DIR__ . '/vendor/autoload.php';
+AnnotationRegistry::registerLoader([$loader, 'loadClass']);
+
+
 // Création du validateur
 $validator = Validation::createValidatorBuilder()
     // On indique au Builder que le validateur qu'il va nous donner doit être capable de trouver les contraintes de validation sur un objet
@@ -81,6 +83,9 @@ $validator = Validation::createValidatorBuilder()
     // On indique au Builder que le validateur doit aussi être capable d'aller lire des configuration d'objets directement dans un fichier 
     // de configuration YAML
     ->addYamlMapping(__DIR__ . '/config/validation.yml')
+    // On indique qu'on souhaite aussi être capable d'extraire les contraintes qui pèsent sur les propriétés d'un objet via les annotations
+    // qui se trouvent au dessus des propriétés / méthodes
+    ->enableAnnotationMapping()
     // Notre validateur est prêt, on demande au builder de nous l'offrir
     ->getValidator();
 
@@ -91,17 +96,5 @@ $user->firstName = '';
 $user->lastName = '';
 $user->age = 2;
 
-/**
- * REMARQUE IMPORTANTE :
- * ---------
- * Vous vous rappelez des précédentes sections ? A chaque fois qu'on appelait la méthode validate(), on lui donnait 2 paramètres :
- * - La valeur à valider (valeur simple ou tableau complexe, peu importe)
- * - Les contraintes à appliquer
- * 
- * Ici, remarquez qu'on ne donne que l'objet que l'on souhaite valider. Dans ce cadre, le validateur sait qu'il doit tirer la configuration
- * des contraintes d'ailleurs et va donc lire le fichier YAML que l'on a précisé lors de la construction sur l'objet en question.
- * 
- * Magique.
- */
 $resultat = $validator->validate($user);
 var_dump($resultat);

@@ -5,20 +5,41 @@ use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Mapping\ClassMetadata;
 
+use Symfony\Component\Validator\Constraints as Assert;
+
 /**
  * DECOUVREZ LA CLASSE USER
  * ---------
  * C'est une classe d'exemple qui représente un objet simple avec un prénom, un nom et un âge.
  * 
- * La partie intéressante est la méthode statique que j'ai ajouté : loadValidatorMetadata().
+ * Regardez bien les commentaires au dessus des propriétés ! Ce sont les annotations qui permettent d'exprimer pour chaque propriété
+ * les contraintes de validation qui pèse dessus !
  * 
- * Nous allons configurer le validateur pour lui expliquer que, si on lui demande de valider un objet, il devra TOUT D'ABORD appeler cette
- * méthode pour obtenir la configuration des contraintes qui pèsent sur les propriétés de l'objet
+ * Nous allons configurer le validateur pour lui expliquer que, si on lui demande de valider un objet, il devra se servir de ces annotations 
+ * pour en déduire les contraintes à appliquer !
+ * 
+ * IMPORTANT :
+ * ----------
+ * Notez que je n'utilise plus uniquement le nom des contraintes (NotBlank, Email) mais un espace de nom Assert (voir en haut du fichier)
+ * ce qui me permet de ne pas avoir à ajouter tous les "use" pour chaque classe utilisée.
  */
 class User
 {
+    /**
+     * @Assert\NotBlank
+     * @Assert\Length(min=3)
+     */
     public $firstName;
+
+    /**
+     * @Assert\NotBlank
+     * @Assert\Length(min=3)
+     */
     public $lastName;
+
+    /**
+     * @Assert\GreaterThanOrEqual(value=18)
+     */
     public $age;
 
     public static function loadValidatorMetadata(ClassMetadata $metadata)
@@ -32,11 +53,11 @@ class User
          * Une fois que notre méthode aura fini le boulot, le validateur pourra intéroger cet objet $metadata pour savoir quelles sont les
          * contraintes qui pèsent sur quelle propriété :)
          */
-        $metadata
-            ->addPropertyConstraints('firstName', [
-                new NotBlank(),
-                new Length(['min' => 3])
-            ]);
+        // $metadata
+        //     ->addPropertyConstraints('firstName', [
+        //         new NotBlank(),
+        //         new Length(['min' => 3])
+        //     ]);
         // ->addPropertyConstraints('lastName', [
         //     new NotBlank(),
         //     new Length(['min' => 3])
