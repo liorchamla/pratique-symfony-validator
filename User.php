@@ -26,14 +26,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 class User
 {
     /**
-     * @Assert\NotBlank
-     * @Assert\Length(min=3)
+     * @Assert\NotBlank(groups="identity")
+     * @Assert\Length(min=3, groups="identity")
      */
     public $firstName;
 
     /**
-     * @Assert\NotBlank
-     * @Assert\Length(min=3)
+     * @Assert\NotBlank(groups="identity")
+     * @Assert\Length(min=3, groups="identity")
      */
     public $lastName;
 

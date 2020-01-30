@@ -1,13 +1,20 @@
+# J'ajoute ici aussi la notion de groups pour que vous voyez comment
+# ca peut fonctionner aussi en YAML
+
 # User:
 #   properties:
 #     firstName:
-#       - NotBlank: ~
+#       - NotBlank:
+#           groups: ['identity']
 #       - Length:
 #           min: 5
+#           groups: ['identity']
 #     lastName:
-#       - NotBlank: ~
+#       - NotBlank:
+#           groups: ['identity']
 #       - Length:
 #           min: 3
+#           groups: ['identity']
 #     age:
 #       - GreaterThanOrEqual:
 #           value: 18
