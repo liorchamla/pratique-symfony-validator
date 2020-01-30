@@ -1,8 +1,8 @@
 <?php
 
-use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
-use Symfony\Component\Validator\Constraints\Length;
-use Symfony\Component\Validator\Constraints\NotBlank;
+namespace App\Model;
+
+use App\Constraint\GmailConstraint;
 use Symfony\Component\Validator\Mapping\ClassMetadata;
 
 use Symfony\Component\Validator\Constraints as Assert;
@@ -36,6 +36,11 @@ class User
      * @Assert\Length(min=3, groups="identity")
      */
     public $lastName;
+
+    /**
+     * @GmailConstraint()
+     */
+    public $email;
 
     /**
      * @Assert\GreaterThanOrEqual(value=18)

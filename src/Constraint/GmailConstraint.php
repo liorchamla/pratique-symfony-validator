@@ -1,17 +1,12 @@
 <?php
 
+namespace App\Constraint;
+
+use Doctrine\Common\Annotations\Annotation;
 use Symfony\Component\Validator\Constraint;
 
 /**
- * CREEONS NOTRE PROPRE CONTRAINTE : LA GMAILCONSTRAINT !
- * ------------
- * Notre but est de créer une contrainte qui permettra d'être sur qu'une adresse est une adresse GMAIL.
- * 
- * On veut donc une contrainte qui puisse prendre deux options :
- * - message : le message d'erreur à afficher si la valeur est invalide
- * - capitals : le fait qu'on veuille absolument que la valeur soit en MAJUSCULES ou pas
- * 
- * Et oui, cette classe ne contient AUCUNE LOGIQUE DE VALIDATION, celle-ci sera effectuée par une deuxième classe : GmailConstraintValidator
+ * @Annotation
  */
 class GmailConstraint extends Constraint
 {
