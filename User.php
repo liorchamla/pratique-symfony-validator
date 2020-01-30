@@ -36,11 +36,11 @@ class User
             ->addPropertyConstraints('firstName', [
                 new NotBlank(),
                 new Length(['min' => 3])
-            ])
-            ->addPropertyConstraints('lastName', [
-                new NotBlank(),
-                new Length(['min' => 3])
-            ])
-            ->addPropertyConstraint('age', new GreaterThanOrEqual(['value' => 10]));
+            ]);
+        // ->addPropertyConstraints('lastName', [
+        //     new NotBlank(),
+        //     new Length(['min' => 3])
+        // ])
+        // ->addPropertyConstraint('age', new GreaterThanOrEqual(['value' => 10]));
     }
 }
