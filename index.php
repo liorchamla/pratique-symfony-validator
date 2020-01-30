@@ -1,49 +1,46 @@
 <?php
 
 /**
- * TROISIEME PARTIE : CREER SES PROPRES REGLES DE VALIDATION 
- * -----------
- * Vu que les contraintes sont toutes représentées par des classes, on peut évidemment créer nos propres contraintes ! :)
- * 
- * COMMENT SE PRESENTE UNE CONTRAINTE :
- * -----------
- * Une contrainte de validation est représentée par deux classes :
- * - La contrainte elle-même : C'est une classe qui hérite de la classe Constraint et elle porte les options qu'on peut offrir à la contrainte 
- * - Le validateur de la contrainte : C'est une classe qui hérite de ConstraintValidator et c'est elle qui effectue effectivement la validation
- * 
- * Donc, quand le validateur a besoin de valider une valeur avec une contrainte, il appelle le validateur spécifique de la contrainte en lui 
- * passant la valeur et l'instance de la contrainte avec ses options. Exemple :
- * 
- * Imaginons qu'on créé la contrainte suivante :
- * $contrainte = new Email(['message' => 'Adresse invalide']);
- * 
- * Elle n'est là que pour représenter la contrainte et porter ses options (notamment ici le message).
- * Quand on appelle le validateur pour vérifier cette contrainte, il ne fait pas LUI MÊME la validation, il délègue ce travail à la classe
- * EmailValidator (qui accompagne la contrainte Email) en lui passant la valeur ET la contrainte :
- * $emailValidator->validate("lior@gmail.com", $contrainte);
- * 
- * L'objet EmailValidator a alors tous les outils en main pour travailler : la valeur, et la contrainte et ses options
- * 
- * Finalement, le validateur ne fait pas grand chose lui-même, il délègue le travail aux classes de validation et c'est pour ça qu'une
- * contrainte est toujours liée à une classe de validation ! :)
- * 
- * A PRENDRE EN COMPTE QUAND ON CREE UNE CONTRAINTE :
+ * QUATRIEME PARTIE : VALIDER DES OBJETS ? OUI ! ON PEUT
  * ------------
- * La contrainte que l'on créé dans cette section vérifie simplement qu'une valeur est bien une adresse GMAIL en vérifiant qu'elle finit par
- * @gmail.com !
+ * Si vous avez déjà utilisé le framework Symfony, vous avez vu qu'il nous arrive très souvent de valider non pas une simple valeur, non pas
+ * un tableau associatif, mais bel et bien des objets (entités ou DTO) ! Et oui, le composant est bel et bien capable d'examiner un objet
+ * afin de voir si ses propriétés respectent bien telles ou telles contraintes !
  * 
- * Vous remarquerez qu'elle ne génère pas d'erreur si la valeur qu'on lui passe est vide ! Pourquoi ? Parce qu'une contrainte ne devrait se 
- * soucier QUE et UNIQUEMENT QUE de son domaine (ici le fait que ce soit une adresse GMAIL).
+ * UNE MISE EN PLACE A FAIRE :
+ * ------------
+ * Jusqu'ici, nous pouvions nous suffire du composant lui même pour travailler, mais si l'on veut valider des objets, il faudra indiquer 
+ * au validateur quelles sont les contraintes qui pèsent sur ses propriétés.
  * 
- * Si on souhaite AUSSI vérifier que la valeur n'est pas vide, pas de soucis, on peut utiliser la contrainte NotBlank !
+ * On appelle ça les METADATAS : ce sont des informations SUPPLEMENTAIRES à propos des propriétés de l'objet. Dans notre cas, on parle parfois
+ * de VALIDATOR METADATAS, puisqu'elles sont destinées au Validateur
  * 
- * Ce n'est bien sur qu'un principe que vous pouvez briser si vous savez ce que vous faites.
+ *  et pour ce faire, il faudra décrire ces contraintes dans 
+ * une configuration quelconque :
+ * - Directement dans la classe de l'objet en ajoutant une méthode statique loadValidatorMetadata que le validateur appellera pour connaitre
+ * les contraintes qui pèsent sur les propriétés
+ * - Directement dans la classe encore, en utilisant des annotations qu'on posera sur les propriétés elles-mêmes (nécessite les packages
+ * doctrine/annotations et doctrine/cache)
+ * - Dans un fichier de configuration YAML (nécessite le composant symfony/yaml)
+ * 
+ * CONFIGURER LE VALIDATEUR :
+ * ----------
+ * Par conséquence, le validateur par défaut est trop simple, il ne tient absolument pas compte de tout ce que je viens de décrire et il nous
+ * faut donc un validateur plus intelligent !
+ * 
+ * Il existe 2 façon d'obtenir un validateur :
+ * - Validation::createValidator() nous renvoie le validateur par défaut, efficace mais incapable de prendre en compte des configurations 
+ * spéciales
+ * - Validation::createValidatorBuilder() nous renvoie un constructeur de validateur et nous permet donc de configurer le futur validateur
+ * que l'on recevra au final !
+ * 
+ * Nous allons donc passer par le ValidatorBuilder pour configurer notre validateur afin de prendre en compte ces nouvelles configurations
  * 
  * ------------
  * 
  * Pour bien comprendre ce qu'on a fait durant cette section, voyez les fichiers suivants :
- * - GmailConstraint.php : représente la contrainte et ses options par défaut
- * - GmailConstraintValidator.php : la classe qui valide effectivement qu'une valeur se finit par @gmail.com ... :D
+ * - User.php : la classe que l'on souhaite valider
+ * - index.php : on utilise le validatorBuilder pour configurer le validateur
  */
 
 
@@ -51,33 +48,37 @@ use Symfony\Component\Validator\Validation;
 
 require __DIR__ . '/vendor/autoload.php';
 
+require 'User.php';
 require 'GmailConstraint.php';
 require 'GmailConstraintValidator.php';
 
 // Création du validateur
-$validator = Validation::createValidator();
+$validator = Validation::createValidatorBuilder()
+    // On indique au Builder que le validateur qu'il va nous donner doit être capable de trouver les contraintes de validation sur un objet
+    // en appelant une méthode static qui s'appelle loadValidatorMetadata (bien sur on aurait pu choisir un autre nom mais c'est une
+    // convention)
+    ->addMethodMapping('loadValidatorMetadata')
+    // Notre validateur est prêt, on demande au builder de nous l'offrir
+    ->getValidator();
 
-// Test avec une valeur invalide
-$email = 'lior@hotmail.com';
-$resultat = $validator->validate($email, new GmailConstraint());
+// Créons un User avec des données invalides (pour voir les contraintes qui pèsent sur les propriétés, allez voir le fichier User.php et sa 
+// méthode statique loadValidatorMetadata)
+$user = new User();
+$user->firstName = '';
+$user->lastName = '';
+$user->age = 2;
 
-// lior@hotmail.com: The string "lior@hotmail.com" is not a Gmail address !
-var_dump('Test de validation avec une mauvaise adresse : ' . $resultat);
-
-$email = 'lior@gmail.com';
-$resultat = $validator->validate($email, new GmailConstraint(['capitals' => true]));
-
-// lior@gmail.com: The string "lior@gmail.com" is not a Gmail address !
-var_dump('Test avec l\'option capitals à true et une mauvaise adresse (en minuscules) : ' . $resultat);
-
-// Test avec une valeur valide
-$email = 'lior@gmail.com';
-$resultat = $validator->validate($email, new GmailConstraint());
-
-var_dump('Test de validation avec adresse valide : ' . $resultat); // "" (aucune erreur)
-
-// Test avec une valeur vide
-$email = '';
-$resultat = $validator->validate($email, new GmailConstraint());
-
-var_dump('Test avec adresse vide : ' . $resultat); // "" (aucune erreur)
+/**
+ * REMARQUE IMPORTANTE :
+ * ---------
+ * Vous vous rappelez des précédentes sections ? A chaque fois qu'on appelait la méthode validate(), on lui donnait 2 paramètres :
+ * - La valeur à valider (valeur simple ou tableau complexe, peu importe)
+ * - Les contraintes à appliquer
+ * 
+ * Ici, remarquez qu'on ne donne que l'objet que l'on souhaite valider. Dans ce cadre, le validateur sait qu'il doit tirer la configuration
+ * des contraintes d'ailleurs et va donc appeler la méthode statique que l'on a précisé lors de la construction sur l'objet en question.
+ * 
+ * Magique.
+ */
+$resultat = $validator->validate($user);
+var_dump($resultat);
